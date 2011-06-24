@@ -23,19 +23,12 @@ class NoSqoop
     @db_pass = cfg[:db_pass] || ENV['NS4U_PASS']
     @db_url  = cfg[:db_url]  || ENV['NS4U_URL']
 
-    case @db_url
-    when /jdbc:mysql:/
-      Java::com.mysql.jdbc.Driver
-    when /jdbc:oracle:/
-      Java::oracle.jdbc.OracleDriver
-    when /jdbc:postgresql:/
-      Java::org.postgresql.Driver
-    else
-      raise "error: unknown database type"
-    end
+    load_driver
+    connect
+    do_hacks
+  end
 
-    @conn = java.sql.DriverManager.get_connection(@db_url, @db_user, @db_pass)
-
+  def do_hacks
     case @db_url
     when /jdbc:mysql:/
       # by default, the mysql jdbc driver will read the entire table
@@ -50,6 +43,23 @@ class NoSqoop
     else
       @stmt = @conn.create_statement
     end
+  end
+
+  def load_driver
+    case @db_url
+    when /jdbc:mysql:/
+      Java::com.mysql.jdbc.Driver
+    when /jdbc:oracle:/
+      Java::oracle.jdbc.OracleDriver
+    when /jdbc:postgresql:/
+      Java::org.postgresql.Driver
+    else
+      raise "error: unknown database type"
+    end
+  end
+
+  def connect
+    @conn = java.sql.DriverManager.get_connection(@db_url, @db_user, @db_pass)
   end
 
   def table_info r
@@ -67,17 +77,67 @@ class NoSqoop
   def query sql, opts = {}
     output = opts[:output] || STDOUT
     delim  = opts[:delim] || "\001"
+    first  = true
+    records   = 0
+    bytes_out = 0
+    s = ''
+
+    begin_ts = Time.now.to_i
 
     res = @stmt.execute_query sql
     tbl = table_info res
+
     while res.next do
       tbl[:cols].times do |i|
         data = res.getString(i+1)
-        output.print "#{data}#{delim}"
+        s << delim if not first
+        s << data if data
+        first = false
       end
-      output.puts
+      output.puts s
+      bytes_out += s.length
+      records +=1
+      s = ''
+      if records % 10000 == 0
+        end_ts = Time.now.to_i
+        mb_out = bytes_out / 1024 / 1024
+        elapsed = end_ts - begin_ts
+        elapsed = 1 if elapsed < 1
+        rate   = mb_out / elapsed
+        rate_r = records / elapsed
+        puts "#{records} records #{rate_r} recs/s, #{mb_out}MB (#{rate} MB/s)"
+      end
     end
+    end_ts = Time.now.to_i
+    mb_out = bytes_out / 1024 / 1024
+    elapsed = end_ts - begin_ts
+    elapsed = 1 if elapsed < 1
+    rate   = mb_out / elapsed.to_f
+    rate_r = records / elapsed
+    puts
+    puts "= total time: #{elapsed} seconds"
+    puts "= records:    #{records} records #{rate_r} recs/s"
+    puts "= data size:  #{mb_out}MB (%.02f MB/s)" % rate
   end
+end
+
+def hdfs_open_write filename
+  c = org.apache.hadoop.conf.Configuration.new
+  u = java.net.URI.create filename
+  p = org.apache.hadoop.fs.Path.new u
+  f = org.apache.hadoop.fs.FileSystem.get u, c
+
+  o = f.create p
+
+  def o.puts s
+    s = "#{s}\n" if s.to_s[-1].chr != "\n"
+    self.write_bytes s
+  end
+
+  return o if not block_given?
+
+  yield o
+  o.close
 end
 
 # main
@@ -125,17 +185,11 @@ end
 ns = NoSqoop.new opts
 
 case output
-when '-'
+when '-' # STDOUT
   ns.query sql, opts
 when /^hdfs:/
-  cmd = "hadoop fs -put - #{output}"
-  # open a pipe ... doesn't work in block form ... jruby bug?
-  pipe = IO.popen(cmd, 'w+')
-  opts[:output] = pipe
-  ns.query sql, opts
-  sleep 1 # no idea why this is required yet
-  pipe.close
-else
+  hdfs_open_write(output) {|f| opts[:output] = f ; ns.query sql, opts}
+else     # unix file path with or without leading file://
   output.sub!(%r|^file://|, '')
   File.open(output, 'w') {|f| opts[:output] = f ; ns.query sql, opts}
 end
