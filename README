@@ -1,0 +1,14 @@
+nosqoop4u
+
+A sqoop-like jruby/jdbc application that does not run via map/reduce.
+
+# view usage information
+$ nosqoop4u -h
+usage: ./nosqoop4u.rb options
+  -h, --help
+  -o, --output      # output file (hdfs://, file://, - for stdout)
+  -c, --connect url # jdbc connection url (env NS4U_URL)
+  -u, --user        # db username         (env NS4U_USER)
+  -p, --pass        # db password         (env NS4U_PASS)
+  -e, --query       # sql query to run
+  -F, --delim       # delimiter (default: ^A)
