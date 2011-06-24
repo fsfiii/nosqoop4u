@@ -4,6 +4,7 @@ NS4U=${0%/*}/nosqoop4u.rb
 CLASSPATH=$CLASSPATH:$HOME/jars/mysql-connector-java-5.1.15-bin.jar
 CLASSPATH=$CLASSPATH:$HOME/jars/postgresql-9.0-801.jdbc4.jar
 CLASSPATH=$CLASSPATH:$HOME/jars/ojdbc14_v10.2.0.4.jar
+export CLASSPATH
 JRUBY_OPTS=
 
 if ! type -p jruby >&/dev/null; then

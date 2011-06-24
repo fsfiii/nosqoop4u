@@ -24,27 +24,31 @@ class NoSqoop
     @db_url  = cfg[:db_url]  || ENV['NS4U_URL']
 
     case @db_url
-      when /jdbc:mysql:/
-        Java::com.mysql.jdbc.Driver
-      when /jdbc:oracle:/
-        Java::oracle.jdbc.OracleDriver
-      when /jdbc:postgresql:/
-        Java::org.postgresql.Driver
-      else
-        raise "error: unknown database type"
+    when /jdbc:mysql:/
+      Java::com.mysql.jdbc.Driver
+    when /jdbc:oracle:/
+      Java::oracle.jdbc.OracleDriver
+    when /jdbc:postgresql:/
+      Java::org.postgresql.Driver
+    else
+      raise "error: unknown database type"
     end
 
     @conn = java.sql.DriverManager.get_connection(@db_url, @db_user, @db_pass)
 
     case @db_url
-      when /jdbc:mysql:/
-        # by default, the mysql jdbc driver will read the entire table
-        # into memory ... this will cause only one row at a time
-        @stmt = @conn.create_statement java.sql.ResultSet.TYPE_FORWARD_ONLY,
-          java.sql.ResultSet.CONCUR_READ_ONLY
-        @stmt.set_fetch_size java.lang.Integer.const_get 'MIN_VALUE'
-      else
-        @stmt = @conn.create_statement
+    when /jdbc:mysql:/
+      # by default, the mysql jdbc driver will read the entire table
+      # into memory ... this will change to only one row at a time
+      @stmt = @conn.create_statement java.sql.ResultSet.TYPE_FORWARD_ONLY,
+        java.sql.ResultSet.CONCUR_READ_ONLY
+      @stmt.set_fetch_size java.lang.Integer.const_get 'MIN_VALUE'
+    when /jdbc:postgresql:/
+      @conn.set_auto_commit false
+      @stmt = @conn.create_statement
+      @stmt.set_fetch_size 50
+    else
+      @stmt = @conn.create_statement
     end
   end
 
@@ -94,21 +98,21 @@ gopts = GetoptLong.new(
 
 gopts.each do |opt, arg|
   case opt
-    when '--output'
-      output = arg
-    when '--connect'
-      opts[:db_url] = arg
-    when '--user'
-      opts[:db_user] = arg
-    when '--pass'
-      opts[:db_pass] = arg
-    when '--delim'
-      opts[:delim] = arg
-    when '--query'
-      sql = arg
-    when '--help'
-      usage
-      exit
+  when '--output'
+    output = arg
+  when '--connect'
+    opts[:db_url] = arg
+  when '--user'
+    opts[:db_user] = arg
+  when '--pass'
+    opts[:db_pass] = arg
+  when '--delim'
+    opts[:delim] = arg
+  when '--query'
+    sql = arg
+  when '--help'
+    usage
+    exit
   end
 end
 
@@ -120,5 +124,18 @@ end
 
 ns = NoSqoop.new opts
 
-#File.open('/tmp/nsout.txt', 'w') {|f| ns.query sql, f}
-ns.query sql, opts
+case output
+when '-'
+  ns.query sql, opts
+when /^hdfs:/
+  cmd = "hadoop fs -put - #{output}"
+  # open a pipe ... doesn't work in block form ... jruby bug?
+  pipe = IO.popen(cmd, 'w+')
+  opts[:output] = pipe
+  ns.query sql, opts
+  sleep 1 # no idea why this is required yet
+  pipe.close
+else
+  output.sub!(%r|^file://|, '')
+  File.open(output, 'w') {|f| opts[:output] = f ; ns.query sql, opts}
+end
