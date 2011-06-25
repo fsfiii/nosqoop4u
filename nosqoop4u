@@ -6,11 +6,11 @@ NS4U=${0%/*}/nosqoop4u.rb
 
 # bring in the hadoop/jdbc jars
 for f in $HADOOP_HOME/hadoop-core-*.jar; do
-  CLASSPATH=${CLASSPATH}:$f;
+  CLASSPATH=${CLASSPATH}:$f
 done
 
 for f in $HADOOP_HOME/lib/*.jar; do
-  CLASSPATH=${CLASSPATH}:$f;
+  CLASSPATH=${CLASSPATH}:$f
 done
 
 export CLASSPATH
@@ -25,7 +25,7 @@ fi
 if [ ! -f $NS4U ]; then
   echo error: cannot find nosqoop4u.rb...please install it alongside: >&2
   echo "       $0" >&2
-  exit 1
+  exit 2
 fi
 
 exec jruby $NS4U "$@"

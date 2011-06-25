@@ -25,21 +25,21 @@ class NoSqoop
 
     load_driver
     connect
-    do_hacks
+    hack_jdbc
   end
 
-  def do_hacks
+  def hack_jdbc
     case @db_url
     when /jdbc:mysql:/
       # by default, the mysql jdbc driver will read the entire table
       # into memory ... this will change to only one row at a time
       @stmt = @conn.create_statement java.sql.ResultSet.TYPE_FORWARD_ONLY,
         java.sql.ResultSet.CONCUR_READ_ONLY
-      @stmt.set_fetch_size java.lang.Integer.const_get 'MIN_VALUE'
+      @stmt.fetch_size = java.lang.Integer.const_get 'MIN_VALUE'
     when /jdbc:postgresql:/
       @conn.set_auto_commit false
       @stmt = @conn.create_statement
-      @stmt.set_fetch_size 50
+      @stmt.fetch_size = 50
     else
       @stmt = @conn.create_statement
     end
@@ -63,11 +63,11 @@ class NoSqoop
   end
 
   def table_info r
-    meta = r.getMetaData
-    cols = meta.getColumnCount
+    meta = r.meta_data
+    cols = meta.column_count
     colnames = []
     cols.times do |i|
-      colnames[i] = meta.getColumnName(i+1)
+      colnames[i] = meta.column_name(i+1)
     end
 
     {:cols => cols, :colnames => colnames}
@@ -78,8 +78,8 @@ class NoSqoop
     output = opts[:output] || STDOUT
     delim  = opts[:delim] || "\001"
     first  = true
-    records   = 0
-    bytes_out = 0
+    recs   = 0
+    bytes  = 0
     s = ''
 
     begin_ts = Time.now.to_i
@@ -89,34 +89,35 @@ class NoSqoop
 
     while res.next do
       tbl[:cols].times do |i|
-        data = res.getString(i+1)
+        data = res.get_string(i+1)
         s << delim if not first
         s << data if data
         first = false
       end
       output.puts s
-      bytes_out += s.length
-      records +=1
+      bytes  += s.length
+      recs +=1
       s = ''
-      if records % 10000 == 0
+      if recs % 10000 == 0
         end_ts = Time.now.to_i
-        mb_out = bytes_out / 1024 / 1024
+        mb_out = bytes  / 1024 / 1024
         elapsed = end_ts - begin_ts
         elapsed = 1 if elapsed < 1
-        rate   = mb_out / elapsed
-        rate_r = records / elapsed
-        puts "#{records} records #{rate_r} recs/s, #{mb_out}MB (#{rate} MB/s)"
+        rate   = mb_out / elapsed.to_f
+        rate_r = recs / elapsed
+        puts "#{recs} records (#{rate_r} recs/s), #{mb_out}MB (%.02f MB/s)" %
+          rate
       end
     end
     end_ts = Time.now.to_i
-    mb_out = bytes_out / 1024 / 1024
+    mb_out = bytes  / 1024 / 1024
     elapsed = end_ts - begin_ts
     elapsed = 1 if elapsed < 1
     rate   = mb_out / elapsed.to_f
-    rate_r = records / elapsed
+    rate_r = recs / elapsed
     puts
     puts "= total time: #{elapsed} seconds"
-    puts "= records:    #{records} records #{rate_r} recs/s"
+    puts "= records:    #{recs} records #{rate_r} recs/s"
     puts "= data size:  #{mb_out}MB (%.02f MB/s)" % rate
   end
 end
