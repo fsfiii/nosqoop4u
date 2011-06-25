@@ -15,7 +15,7 @@ done
 
 export CLASSPATH
 
-export JRUBY_OPTS='--fast --server -J-Xmx512m'
+export JRUBY_OPTS='--fast --server'
 
 if ! type -p jruby >&/dev/null; then
   echo error: cannot find jruby...please set your PATH >&2

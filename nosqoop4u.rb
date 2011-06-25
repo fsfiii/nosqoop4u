@@ -80,28 +80,47 @@ class NoSqoop
   private :table_info
 
   def query_jdbc sql, opts = {}
-    output = opts[:output] || STDOUT
-    delim  = opts[:delim] || "\001"
-    recs   = 0
-    bytes  = 0
-    s = ''
-
-    begin_ts = Time.now.to_i
+    delim = opts[:delim] || "\001"
 
     res = @stmt.execute_query sql
     tbl = table_info res
 
     while res.next do
+      s = ''
       tbl[:cols].times do |i|
         data = res.get_string(i+1)
         s << delim if i > 0
         s << data if data
       end
       yield s
-      #output.puts s
+    end
+  end
+
+  def query_cmd sql, opts = {}
+    cmd = %Q|PGPASSWORD=#{@db_pass} psql -t -A -F "#{@delim}" -c '#{sql}' | +
+      %Q|-h #{@db_host} -U #{@db_user} #{@db_name}|
+        p cmd
+    STDOUT.sync = true
+    IO.popen(cmd).each_line {|line| yield line}
+  end
+
+  def query sql, opts = {}
+    output = opts[:output] || STDOUT
+    recs   = 0
+    bytes  = 0
+
+    if opts[:query_type].to_s == 'cmd'
+      q = method :query_cmd
+    else
+      q = method :query_jdbc
+    end
+
+    begin_ts = Time.now.to_i
+
+    q.call(sql, opts) do |s|
+      output.puts s
       bytes += s.length
       recs  +=1
-      s = ''
       if recs % 100000 == 0
         end_ts = Time.now.to_i
         mb_out = bytes  / 1024 / 1024
@@ -113,6 +132,7 @@ class NoSqoop
           rate
       end
     end
+
     end_ts = Time.now.to_i
     mb_out = bytes  / 1024 / 1024
     elapsed = end_ts - begin_ts
@@ -123,27 +143,6 @@ class NoSqoop
     puts "= total time: #{elapsed} seconds"
     puts "= records:    #{recs} records #{rate_r} recs/s"
     puts "= data size:  #{mb_out}MB (%.02f MB/s)" % rate
-  end
-
-  def query_cmd sql, opts = {}
-    @db_name = 'ffejes'
-    @db_host = 'trihada01'
-    cmd = %Q|PGPASSWORD=#{@db_pass} psql -t -A -F "#{@delim}" -c '#{sql}' | +
-      %Q|-h #{@db_host} -U #{@db_user} #{@db_name}|
-        p cmd
-    `#{cmd}`.each_line {|line| yield line}
-  end
-
-  def query sql, opts = {}
-    output = opts[:output] || STDOUT
-
-    if opts[:query_type].to_s == 'cmd'
-      q = method :query_cmd
-    else
-      q = method :query_jdbc
-      q = method :query_cmd
-    end
-    q.call(sql, opts) {|s| output.puts s}
   end
 end
 
