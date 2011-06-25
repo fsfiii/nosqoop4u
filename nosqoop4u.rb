@@ -22,6 +22,8 @@ class NoSqoop
     @db_user = cfg[:db_user] || ENV['NS4U_USER']
     @db_pass = cfg[:db_pass] || ENV['NS4U_PASS']
     @db_url  = cfg[:db_url]  || ENV['NS4U_URL']
+    @db_host = cfg[:db_host] || ENV['NS4U_HOST']
+    @db_name = cfg[:db_name] || ENV['NS4U_DB']
 
     load_driver
     connect
@@ -77,10 +79,9 @@ class NoSqoop
   end
   private :table_info
 
-  def query sql, opts = {}
+  def query_jdbc sql, opts = {}
     output = opts[:output] || STDOUT
     delim  = opts[:delim] || "\001"
-    first  = true
     recs   = 0
     bytes  = 0
     s = ''
@@ -93,15 +94,15 @@ class NoSqoop
     while res.next do
       tbl[:cols].times do |i|
         data = res.get_string(i+1)
-        s << delim if not first
+        s << delim if i > 0
         s << data if data
-        first = false
       end
-      output.puts s
-      bytes  += s.length
-      recs +=1
+      yield s
+      #output.puts s
+      bytes += s.length
+      recs  +=1
       s = ''
-      if recs % 10000 == 0
+      if recs % 100000 == 0
         end_ts = Time.now.to_i
         mb_out = bytes  / 1024 / 1024
         elapsed = end_ts - begin_ts
@@ -122,6 +123,27 @@ class NoSqoop
     puts "= total time: #{elapsed} seconds"
     puts "= records:    #{recs} records #{rate_r} recs/s"
     puts "= data size:  #{mb_out}MB (%.02f MB/s)" % rate
+  end
+
+  def query_cmd sql, opts = {}
+    @db_name = 'ffejes'
+    @db_host = 'trihada01'
+    cmd = %Q|PGPASSWORD=#{@db_pass} psql -t -A -F "#{@delim}" -c '#{sql}' | +
+      %Q|-h #{@db_host} -U #{@db_user} #{@db_name}|
+        p cmd
+    `#{cmd}`.each_line {|line| yield line}
+  end
+
+  def query sql, opts = {}
+    output = opts[:output] || STDOUT
+
+    if opts[:query_type].to_s == 'cmd'
+      q = method :query_cmd
+    else
+      q = method :query_jdbc
+      q = method :query_cmd
+    end
+    q.call(sql, opts) {|s| output.puts s}
   end
 end
 
@@ -180,8 +202,7 @@ gopts.each do |opt, arg|
   end
 end
 
-if opts[:db_url].nil? or opts[:db_user].nil? or opts[:db_pass].nil? \
-  or sql.nil?
+if opts[:db_user].nil? or opts[:db_pass].nil? or sql.nil?
   usage
   exit 1
 end
