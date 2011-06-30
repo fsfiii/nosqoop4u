@@ -29,3 +29,4 @@ if [ ! -f $NS4U ]; then
 fi
 
 exec jruby $NS4U "$@"
+exec jruby --debug -rprofile $NS4U "$@"

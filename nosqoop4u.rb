@@ -87,8 +87,8 @@ class NoSqoop
 
     while res.next do
       s = ''
-      tbl[:cols].times do |i|
-        data = res.get_string(i+1)
+      1.upto(tbl[:cols]) do |i|
+        data = res.get_string i
         s << delim if i > 0
         s << data if data
       end
@@ -115,25 +115,25 @@ class NoSqoop
       q = method :query_jdbc
     end
 
-    begin_ts = Time.now.to_i
+    begin_ts = Time.now
 
     q.call(sql, opts) do |s|
       output.puts s
       bytes += s.length
       recs  +=1
       if recs % 100000 == 0
-        end_ts = Time.now.to_i
+        end_ts = Time.now
         mb_out = bytes  / 1024 / 1024
         elapsed = end_ts - begin_ts
         elapsed = 1 if elapsed < 1
         rate   = mb_out / elapsed.to_f
         rate_r = recs / elapsed
-        puts "#{recs} records (#{rate_r} recs/s), #{mb_out}MB (%.02f MB/s)" %
-          rate
+        puts "#{recs} records (%.02f recs/s), #{mb_out}MB (%.02f MB/s)" %
+          [rate_r, rate]
       end
     end
 
-    end_ts = Time.now.to_i
+    end_ts = Time.now
     mb_out = bytes  / 1024 / 1024
     elapsed = end_ts - begin_ts
     elapsed = 1 if elapsed < 1
@@ -141,7 +141,7 @@ class NoSqoop
     rate_r = recs / elapsed
     puts
     puts "= total time: #{elapsed} seconds"
-    puts "= records:    #{recs} records #{rate_r} recs/s"
+    puts "= records:    #{recs} records %.02f recs/s" % rate_r
     puts "= data size:  #{mb_out}MB (%.02f MB/s)" % rate
   end
 end
