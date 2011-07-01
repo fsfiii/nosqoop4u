@@ -2,6 +2,19 @@ nosqoop4u
 
 A sqoop-like jruby/jdbc application that does not run via map/reduce.
 
+- Why write this?  What's wrong with sqoop?
+
+Nothing is wrong with sqoop.  It just doesn't do quite what I need and
+it's not so straightforward to debug when something goes wrong.  In
+addition, my Hadoop cluster does not route beyond an access layer which
+means I need to create individual db-specific firewall rules in order to
+use sqoop.
+
+Also, I wanted a nice opportunity to play with jruby's java interop
+and here I get to use both the JDBC and Hadoop HDFS APIs.  On a side
+note, I'm blown away by jruby 1.6.2...stellar performance and an
+elegant seamless integration with java.
+
 # view usage information
 $ nosqoop4u -h
 usage: ./nosqoop4u.rb options
