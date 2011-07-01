@@ -25,3 +25,7 @@ usage: ./nosqoop4u.rb options
   -p, --pass        # db password         (env NS4U_PASS)
   -e, --query       # sql query to run
   -F, --delim       # delimiter (default: ^A)
+
+Please let me know if you find this software useful!
+
+--frank
