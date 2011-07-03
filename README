@@ -15,8 +15,14 @@ and here I get to use both the JDBC and Hadoop HDFS APIs.  On a side
 note, I'm blown away by jruby 1.6.2...stellar performance and an
 elegant seamless integration with java.
 
-# view usage information
-$ nosqoop4u -h
+# installation
+
+jgem install --no-wrapper nosqoop4u
+
+Or simply copy nosqoop4u.rb and nosqoop4u into your path.
+
+# usage
+
 usage: nosqoop4u options
   -o, --output      # output file (hdfs://, file://, - for stdout)
   -c, --connect url # jdbc connection url (env NS4U_URL)
