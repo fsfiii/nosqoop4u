@@ -39,7 +39,8 @@ class NoSqoop
         java.sql.ResultSet.CONCUR_READ_ONLY
       @stmt.fetch_size = java.lang.Integer.const_get 'MIN_VALUE'
       # handle 0000-00-00 timestamps without an exception, lulz
-      @db_url << '?zeroDateTimeBehavior=round' if @db_url !~
+      #@db_url << '?zeroDateTimeBehavior=round' if @db_url !~
+      @db_url << '?zeroDateTimeBehavior=convertToNull' if @db_url !~
         /zeroDateTimeBehavior/
     when /jdbc:postgresql:/
       @conn.set_auto_commit false
