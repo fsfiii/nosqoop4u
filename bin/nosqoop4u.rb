@@ -6,14 +6,14 @@ require 'getoptlong'
 
 def usage
   puts <<-EOF
-usage: #$0 options
-  -h, --help
+usage: nosqoop4u options
   -o, --output      # output file (hdfs://, file://, - for stdout)
   -c, --connect url # jdbc connection url (env NS4U_URL)
   -u, --user        # db username         (env NS4U_USER)
   -p, --pass        # db password         (env NS4U_PASS)
   -e, --query       # sql query to run
   -F, --delim       # delimiter (default: ^A)
+  -h, --help
 EOF
 end
 
