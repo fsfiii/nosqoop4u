@@ -1,6 +1,9 @@
 nosqoop4u
 
-A sqoop-like jruby/jdbc application that does not run via map/reduce.
+A sqoop-like jruby/jdbc query application that does not run via map/reduce.
+It supports direct output to HDFS and unix filesystems as well as STDOUT.
+
+Requires jruby 1.6+.
 
 - Why write this?  What's wrong with sqoop?
 

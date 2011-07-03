@@ -7,11 +7,13 @@ Gem::Specification.new do |s|
   s.authors = ["Frank Fejes"]
   s.email = 'frank@fejes.net'
   s.summary =
-    'A sqoop-like jruby/jdbc application that does not run via map/reduce.'
+    'A sqoop-like jruby/jdbc query app that does not run via map/reduce.'
   s.homepage = 'https://github.com/fsfiii/nosqoop4u'
-  s.description =
-    "A sqoop-like jruby/jdbc application that does not run via map/reduce.\n" +
-    'Requires jruby 1.6+.'
+  s.description = <<EOF
+A sqoop-like jruby/jdbc query application that does not run via map/reduce.
+It supports direct output to HDFS and unix filesystems as well as STDOUT.
+Requires jruby 1.6+.
+EOF
   s.files = [
     "README",
     "CHANGELOG",
