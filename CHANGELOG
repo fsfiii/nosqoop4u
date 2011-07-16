@@ -1,2 +1,6 @@
+* 2011-07-15 - fsf
+- new: added --driver option to manually specify jdbc class to load
+- new: added auto db2 driver load for jdbc:db2: URIs
+
 * 2011-07-02 - fsf
 - initial import

@@ -13,6 +13,7 @@ usage: nosqoop4u options
   -p, --pass        # db password         (env NS4U_PASS)
   -e, --query       # sql query to run
   -F, --delim       # delimiter (default: ^A)
+  -d, --driver      # JDBC driver class to load
   -h, --help
 EOF
 end
@@ -24,6 +25,7 @@ class NoSqoop
     @db_url  = cfg[:db_url]  || ENV['NS4U_URL']
     @db_host = cfg[:db_host] || ENV['NS4U_HOST']
     @db_name = cfg[:db_name] || ENV['NS4U_DB']
+    @driver  = cfg[:driver]  || ENV['NS4U_DRIVER']
 
     load_driver
     connect
@@ -48,19 +50,23 @@ class NoSqoop
   end
 
   def load_driver
+    eval @driver if @driver
+
     case @db_url
     when /jdbc:mysql:/
-      Java::com.mysql.jdbc.Driver
+      com.mysql.jdbc.Driver
       # handle 0000-00-00 timestamps without an exception, lulz
       #@db_url << '?zeroDateTimeBehavior=round' if @db_url !~
       @db_url << '?zeroDateTimeBehavior=convertToNull' if @db_url !~
         /zeroDateTimeBehavior/
     when /jdbc:oracle:/
-      Java::oracle.jdbc.OracleDriver
+      oracle.jdbc.OracleDriver
     when /jdbc:postgresql:/
-      Java::org.postgresql.Driver
+      org.postgresql.Driver
+    when /jdbc:db2:/
+      com.ibm.db2.jcc.DB2Driver
     else
-      raise "error: unknown database type"
+      raise "error: unknown database type" if not @driver
     end
   end
 
@@ -179,6 +185,7 @@ gopts = GetoptLong.new(
   [ '--pass',    '-p', GetoptLong::REQUIRED_ARGUMENT ],
   [ '--query',   '-e', GetoptLong::REQUIRED_ARGUMENT ],
   [ '--delim',   '-F', GetoptLong::REQUIRED_ARGUMENT ],
+  [ '--driver',  '-d', GetoptLong::REQUIRED_ARGUMENT ],
   [ '--help',    '-h', GetoptLong::NO_ARGUMENT ]
 )
 
@@ -194,6 +201,8 @@ gopts.each do |opt, arg|
     opts[:db_pass] = arg
   when '--delim'
     opts[:delim] = arg
+  when '--driver'
+    opts[:driver] = arg
   when '--query'
     sql = arg
   when '--help'
