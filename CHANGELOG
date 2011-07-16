@@ -1,6 +1,8 @@
 * 2011-07-15 - fsf
 - new: added --driver option to manually specify jdbc class to load
 - new: added auto db2 driver load for jdbc:db2: URIs
+- new: set the default fetch size to 100 for postgresql and db2
+- new: added --fetch option to manually specify the fetch size
 
 * 2011-07-02 - fsf
 - initial import

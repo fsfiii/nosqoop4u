@@ -11,9 +11,10 @@ usage: nosqoop4u options
   -c, --connect url # jdbc connection url (env NS4U_URL)
   -u, --user        # db username         (env NS4U_USER)
   -p, --pass        # db password         (env NS4U_PASS)
+  -d, --driver      # JDBC driver class   (env NS4U_DRIVER)
   -e, --query       # sql query to run
   -F, --delim       # delimiter (default: ^A)
-  -d, --driver      # JDBC driver class to load
+  -f, --fetch       # fetch size
   -h, --help
 EOF
 end
@@ -26,6 +27,7 @@ class NoSqoop
     @db_host = cfg[:db_host] || ENV['NS4U_HOST']
     @db_name = cfg[:db_name] || ENV['NS4U_DB']
     @driver  = cfg[:driver]  || ENV['NS4U_DRIVER']
+    @fetch   = cfg[:fetch]
 
     load_driver
     connect
@@ -43,10 +45,15 @@ class NoSqoop
     when /jdbc:postgresql:/
       @conn.set_auto_commit false
       @stmt = @conn.create_statement
-      @stmt.fetch_size = 50
+      @stmt.fetch_size = 100
+    when /jdbc:db2:/
+      @stmt = @conn.create_statement
+      @stmt.fetch_size = 100
     else
       @stmt = @conn.create_statement
     end
+
+    @stmt.fetch_size = @fetch if @fetch
   end
 
   def load_driver
@@ -203,6 +210,9 @@ gopts.each do |opt, arg|
     opts[:delim] = arg
   when '--driver'
     opts[:driver] = arg
+  when '--fetch'
+    opts[:fetch] = arg.to_i
+    opts[:fetch] = nil if opts[:fetch] < 1
   when '--query'
     sql = arg
   when '--help'

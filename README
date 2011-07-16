@@ -31,8 +31,10 @@ usage: nosqoop4u options
   -c, --connect url # jdbc connection url (env NS4U_URL)
   -u, --user        # db username         (env NS4U_USER)
   -p, --pass        # db password         (env NS4U_PASS)
+  -d, --driver      # JDBC driver class   (env NS4U_DRIVER)
   -e, --query       # sql query to run
   -F, --delim       # delimiter (default: ^A)
+  -f, --fetch       # fetch size
   -h, --help
 
 Please let me know if you find this software useful!
