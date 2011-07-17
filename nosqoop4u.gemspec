@@ -2,7 +2,7 @@ Gem::Specification.new do |s|
   s.name = 'nosqoop4u'
   s.rubyforge_project = 'nosqoop4u'
   s.platform = 'java'
-  s.version = '0.1.1'
+  s.version = '0.1.2'
   s.date = '2011-07-15'
   s.authors = ["Frank Fejes"]
   s.email = 'frank@fejes.net'

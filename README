@@ -35,6 +35,7 @@ usage: nosqoop4u options
   -e, --query       # sql query to run
   -F, --delim       # delimiter (default: ^A)
   -f, --fetch       # fetch size
+  -v, --version
   -h, --help
 
 Please let me know if you find this software useful!

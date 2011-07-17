@@ -4,6 +4,8 @@ require 'java'
 require 'rubygems'
 require 'getoptlong'
 
+APP_VERSION='0.1.2'
+
 def usage
   puts <<-EOF
 usage: nosqoop4u options
@@ -15,6 +17,7 @@ usage: nosqoop4u options
   -e, --query       # sql query to run
   -F, --delim       # delimiter (default: ^A)
   -f, --fetch       # fetch size
+  -v, --version
   -h, --help
 EOF
 end
@@ -193,6 +196,7 @@ gopts = GetoptLong.new(
   [ '--query',   '-e', GetoptLong::REQUIRED_ARGUMENT ],
   [ '--delim',   '-F', GetoptLong::REQUIRED_ARGUMENT ],
   [ '--driver',  '-d', GetoptLong::REQUIRED_ARGUMENT ],
+  [ '--version', '-v', GetoptLong::NO_ARGUMENT ],
   [ '--help',    '-h', GetoptLong::NO_ARGUMENT ]
 )
 
@@ -215,6 +219,9 @@ gopts.each do |opt, arg|
     opts[:fetch] = nil if opts[:fetch] < 1
   when '--query'
     sql = arg
+  when '--version'
+    puts APP_VERSION
+    exit
   when '--help'
     usage
     exit
