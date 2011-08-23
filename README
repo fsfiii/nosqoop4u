@@ -3,7 +3,7 @@ nosqoop4u
 A sqoop-like jruby/jdbc query application that does not run via map/reduce.
 It supports direct output to HDFS and unix filesystems as well as STDOUT.
 
-Requires jruby 1.6+.
+Requires jruby 1.6+, however 1.6.4+ is HIGHLY recommended for top performance.
 
 - Why write this?  What's wrong with sqoop?
 
